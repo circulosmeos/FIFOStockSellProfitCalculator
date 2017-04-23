@@ -11,7 +11,7 @@ See **Configuration** below.
 
 See [this page for a step by step guide](https://circulosmeos.wordpress.com/2017/04/23/fifo-profits-stock-sell-calculation-with-libreoffice-calc).
 
-Columns T, U and V and the three accumulated values have been written by the script on the *sample.csv* (C1:J21):
+Columns T, U and V and the three accumulated values have been written by the script on the sample file *sample.csv* (C1:J21):
 
 ![](https://circulosmeos.files.wordpress.com/2017/04/calc-stock-ops-example-after-script-exec.png?w=680)
 
@@ -45,6 +45,12 @@ Then, the *python* executable from LibreOffice installation must be used, so cha
     C:\Program Files (x86)\LibreOffice 5\program> python.exe C:\FIFOStockSellProfitCalculator.py
 
 
+Embed the script into a Calc document
+=====================================
+
+This script can be embedded into any LibreOffice Calc doc (.ods): [download this script to do that](https://github.com/circulosmeos/LibreOfficeScriptInsert).
+
+
 Configuration
 =============
 
@@ -67,7 +73,7 @@ Modify these script's variable values as convenient:
     ASSETS_VOL  = 'V'       # volume of assets of type ASSET after each buy/sell op
 
     # round to zero if this quantity of assets is left on some sell:
-    # NOTE: do no set ROUND_IF_BELOW to values below (previously set) getcontext().prec 
+    # NOTE: do no set ROUND_IF_BELOW to values below (previously set) DECIMAL_NUMBER_PRECISION 
     ROUND_IF_BELOW = Decimal('5e-06')
 
     # print logs to stdout

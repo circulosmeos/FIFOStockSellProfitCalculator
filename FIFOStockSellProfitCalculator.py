@@ -51,7 +51,7 @@ def FIFOStockSellProfitCalculator(*args):
     ASSETS_VOL  = 'V'       # volume of assets of type ASSET after each buy/sell op
 
     # round to zero if this quantity of assets is left on some sell:
-    # NOTE: do no set ROUND_IF_BELOW to values below (previously set) getcontext().prec 
+    # NOTE: do no set ROUND_IF_BELOW to values below (previously set) DECIMAL_NUMBER_PRECISION
     ROUND_IF_BELOW = Decimal('5e-06')
 
     # print logs to stdout
@@ -119,7 +119,7 @@ def FIFOStockSellProfitCalculator(*args):
             if LOG==1: print("buy  " + str(i))
             # Buy = [ price, quantity ]
             fifo.append( 
-                [ Decimal(sheet.getCellRangeByName(PRICE   + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)), 
+                [ Decimal(sheet.getCellRangeByName(PRICE  + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)), 
                   Decimal(sheet.getCellRangeByName(VOLUME + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)) 
                 ] )
             # also show the assets' volume after this buy
@@ -134,7 +134,7 @@ def FIFOStockSellProfitCalculator(*args):
         elif (sheet.getCellRangeByName(TYPE + str(i)).String == SELL):
             if LOG==1: print("sell " + str(i) + "\t" +
                 "[" + sheet.getCellRangeByName(PRICE + str(i)).String + ", " + 
-                    sheet.getCellRangeByName(VOLUME + str(i)).String + "] \t" + asset
+                    sheet.getCellRangeByName(VOLUME  + str(i)).String + "] \t" + asset
                 )
             if LOG==1: print(fifo)
             quantity    = Decimal(sheet.getCellRangeByName(VOLUME + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT))
@@ -163,7 +163,7 @@ def FIFOStockSellProfitCalculator(*args):
             # let's write the profit:
             sheet.getCellRangeByName(PROFIT + str(i)).Value = float ( 
                 Decimal(sheet.getCellRangeByName(VOLUME + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)) * 
-                Decimal(sheet.getCellRangeByName(PRICE   + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)) - 
+                Decimal(sheet.getCellRangeByName(PRICE  + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)) - 
                 accumulator
                 )
             sheet.getCellRangeByName(PROFIT_DESC + str(i)).String = asset
