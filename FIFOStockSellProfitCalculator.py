@@ -28,6 +28,19 @@ def FIFOStockSellProfitCalculator(*args):
     # Number of significant digits is DECIMAL_NUMBER_PRECISION, 
     # and asset volumes below ROUND_IF_BELOW are set to zero.
 
+    # make FIFO (1), or medium value (0) calculation
+    TYPE_OF_CALCULATION = 1;
+
+    # array of changes in TYPE_OF_CALCULATION depending on rows:
+    # pairs of the type [ row (from this number of row on, inclusive), TYPE_OF_CALCULATION]
+    # Please, note that rows must be in order of magnitude in the array.
+    # ( deque implements popleft() )
+    # Example:
+    # from row 13 on change TYPE_OF_CALCULATION to 0, and from row 50 to the end change TYPE_OF_CALCULATION to 1:
+    # changes_in_type_of_calculation = deque( [ [13, 0], [50, 1] ] )
+    # Default value is no change from initial TYPE_OF_CALCULATION value:  = deque( [] )
+    changes_in_type_of_calculation = deque( [] )
+
     # decimal numbers precision:
     DECIMAL_NUMBER_PRECISION = 6;
 
@@ -110,12 +123,12 @@ def FIFOStockSellProfitCalculator(*args):
     asset = ''
     while (i < END_OF_DATA):
         asset = sheet.getCellRangeByName(ASSET + str(i)).String
-        if (fifos.get(asset) == None):
+        if ( fifos.get(asset) == None ):
             fifos[asset]=deque()
         fifo=fifos[asset]
         # buy:
         # buys are accumulated one after another until a sell arrives
-        if (sheet.getCellRangeByName(TYPE + str(i)).String == BUY):
+        if ( sheet.getCellRangeByName(TYPE + str(i)).String == BUY ):
             if LOG==1: print("buy  " + str(i))
             # Buy = [ price, quantity ]
             fifo.append( 
@@ -129,37 +142,67 @@ def FIFOStockSellProfitCalculator(*args):
                 assets_remaining+=buys[1]
             sheet.getCellRangeByName(ASSETS_VOL + str(i)).Value = float(assets_remaining)            
         # sell:
-        # add previous buy values from first on until sell's asset quantity is exhausted
-        # in order to calculate buy value and with the sell value obtain the (FIFO) benefit of this sell
-        elif (sheet.getCellRangeByName(TYPE + str(i)).String == SELL):
+        elif ( sheet.getCellRangeByName(TYPE + str(i)).String == SELL ):
+            # first, some logs
             if LOG==1: print("sell " + str(i) + "\t" +
                 "[" + sheet.getCellRangeByName(PRICE + str(i)).String + ", " + 
                     sheet.getCellRangeByName(VOLUME  + str(i)).String + "] \t" + asset
                 )
             if LOG==1: print(fifo)
+
             quantity    = Decimal(sheet.getCellRangeByName(VOLUME + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT))
             accumulator = Decimal('0')
-            if (len(fifo)==0):
-                # if there hasn't been buys previous to a sell, the sell value is directly computed
-                accumulator = Decimal('0')
-            else:
-                while (len(fifo)>0):
-                    if (fifo[0][1]>=quantity):
-                        # first buy has enough funds (quantity) for this sell operation
-                        fifo[0][1]-=quantity
-                        price = fifo[0][0]
-                        accumulator+=quantity*price
-                        # ROUND_IF_BELOW:
-                        if (fifo[0][1]<=ROUND_IF_BELOW): 
+
+            if ( TYPE_OF_CALCULATION == 1 ):
+                # FIFO:
+                # add previous buy values from first on until sell's asset quantity is exhausted
+                # in order to calculate buy value and with the sell value obtain the (FIFO) benefit of this sell
+                if ( len(fifo) == 0 ):
+                    # if there hasn't been buys previous to a sell, the sell value is directly computed
+                    accumulator = Decimal('0')
+                else:
+                    while ( len(fifo) > 0 ):
+                        if ( fifo[0][1] >= quantity ):
+                            # first buy has enough funds (quantity) for this sell operation
+                            fifo[0][1] -= quantity
+                            price = fifo[0][0]
+                            accumulator += quantity*price
+                            # ROUND_IF_BELOW:
+                            if ( fifo[0][1] <= ROUND_IF_BELOW ):
+                                fifo.popleft()
+                            break
+                        else:
+                            # first buy has not enough funds (quantity) for this operation
+                            # so it will have to drain next buys later in the while loop
+                            quantity -= fifo[0][1]
+                            accumulator += fifo[0][1]*fifo[0][0]
                             fifo.popleft()
-                        break
-                    else:
-                        # first buy has not enough funds (quantity) for this operation
-                        # so it will have to drain next buys later in the while loop
-                        quantity-=fifo[0][1]
-                        accumulator+=fifo[0][1]*fifo[0][0]
+            elif ( TYPE_OF_CALCULATION == 0 ):
+                # medium value:
+                # add previous buy values from first to last to calculate a medium value to which single value fifo[][] will be set
+                # in order to calculate buy value and with the sell value obtain the (medium value) benefit of this sell
+                if ( len(fifo) == 0 ):
+                    # if there hasn't been buys previous to a sell, the sell value is directly computed
+                    accumulator = Decimal('0')
+                else:
+                    # sum up all previous buys
+                    total_quantity = Decimal('0')
+                    total_accumulator = Decimal('0')
+                    while ( len(fifo) > 0 ):
+                        total_quantity += fifo[0][1]
+                        total_accumulator += fifo[0][1]*fifo[0][0]
                         fifo.popleft()
-            # sell "buy value" has been calculated using FIFO algorithm in accumulator variable
+                    # substitute all previous buys with a single operation with all funds valued at medium price
+                    # if there's a remaining quantity of assets (if not, assets' array is left empty)
+                    if ( total_quantity - quantity > 0 ):
+                        fifo.append(
+                            [ Decimal(total_accumulator / total_quantity),
+                              Decimal(total_quantity - quantity)
+                            ] )
+                    # now calculate "buy value" with medium costs:
+                    accumulator = quantity * ( total_accumulator / total_quantity )
+
+            # sell "buy value" has been calculated in accumulator variable
             # let's write the profit:
             sheet.getCellRangeByName(PROFIT + str(i)).Value = float ( 
                 Decimal(sheet.getCellRangeByName(VOLUME + str(i)).String.replace(DECIMAL_POINT,PYTHON_DECIMAL_POINT)) * 
@@ -174,7 +217,16 @@ def FIFOStockSellProfitCalculator(*args):
             sheet.getCellRangeByName(ASSETS_VOL + str(i)).Value = float(assets_remaining)
             if LOG==1: print(fifo)
             if LOG==1: print(PROFIT + str(i) + "=\t" + sheet.getCellRangeByName(PROFIT + str(i)).String)
+
+        # next row
         i+=1
+
+        # check changes_in_type_of_calculation array:
+        if ( len(changes_in_type_of_calculation) > 0 ):
+            if ( changes_in_type_of_calculation[0][0] == i ):
+                TYPE_OF_CALCULATION = changes_in_type_of_calculation[0][1]
+                changes_in_type_of_calculation.popleft()
+                if LOG==1: print("\nTYPE_OF_CALCULATION = " + str(TYPE_OF_CALCULATION) + "\n")
 
     # write sum of gross profits
     sheet.getCellRangeByName(PROFIT + str(END_OF_DATA)).Formula = \
