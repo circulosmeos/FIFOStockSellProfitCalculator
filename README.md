@@ -56,6 +56,18 @@ Configuration
 
 Modify these script's variable values as convenient:
 
+    # make FIFO (1), or average (0) calculation
+    TYPE_OF_CALCULATION = 1;
+
+    # array of changes in TYPE_OF_CALCULATION depending on rows:
+    # pairs of the type [ row (from this number of row on, inclusive), TYPE_OF_CALCULATION]
+    # Please, note that rows must be in order of magnitude in the array.
+    # Example:
+    # from row 13 on, change TYPE_OF_CALCULATION to 0, and from row 50 to the end change TYPE_OF_CALCULATION to 1:
+    # changes_in_type_of_calculation = deque( [ [13, 0], [50, 1] ] )
+    # Default value is no change from initial TYPE_OF_CALCULATION value:  = deque( [] )
+    changes_in_type_of_calculation = deque( [] )
+
     # decimal numbers precision:
     DECIMAL_NUMBER_PRECISION = 6;
 

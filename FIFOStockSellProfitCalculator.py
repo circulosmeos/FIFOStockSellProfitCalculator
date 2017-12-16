@@ -3,7 +3,7 @@
 # buys and sells in rows. 
 # See FIFOStockSellProfitCalculator() comments for columns' values.
 #
-# by circulosmeos, 2017-04
+# by circulosmeos, 2017-04, 2017-11, 2017-12
 # https://circulosmeos.wordpress.com/2017/04/23/fifo-profits-stock-sell-calculation-with-libreoffice-calc
 # https://github.com/circulosmeos/FIFOStockSellProfitCalculator
 # licensed under GPLv3
@@ -28,7 +28,7 @@ def FIFOStockSellProfitCalculator(*args):
     # Number of significant digits is DECIMAL_NUMBER_PRECISION, 
     # and asset volumes below ROUND_IF_BELOW are set to zero.
 
-    # make FIFO (1), or medium value (0) calculation
+    # make FIFO (1), or average (0) calculation
     TYPE_OF_CALCULATION = 1;
 
     # array of changes in TYPE_OF_CALCULATION depending on rows:
@@ -36,7 +36,7 @@ def FIFOStockSellProfitCalculator(*args):
     # Please, note that rows must be in order of magnitude in the array.
     # ( deque implements popleft() )
     # Example:
-    # from row 13 on change TYPE_OF_CALCULATION to 0, and from row 50 to the end change TYPE_OF_CALCULATION to 1:
+    # from row 13 on, change TYPE_OF_CALCULATION to 0, and from row 50 to the end change TYPE_OF_CALCULATION to 1:
     # changes_in_type_of_calculation = deque( [ [13, 0], [50, 1] ] )
     # Default value is no change from initial TYPE_OF_CALCULATION value:  = deque( [] )
     changes_in_type_of_calculation = deque( [] )
@@ -178,9 +178,9 @@ def FIFOStockSellProfitCalculator(*args):
                             accumulator += fifo[0][1]*fifo[0][0]
                             fifo.popleft()
             elif ( TYPE_OF_CALCULATION == 0 ):
-                # medium value:
-                # add previous buy values from first to last to calculate a medium value to which single value fifo[][] will be set
-                # in order to calculate buy value and with the sell value obtain the (medium value) benefit of this sell
+                # average:
+                # add previous buy values from first to last to calculate an average to which single value fifo[][] will be set
+                # in order to calculate buy value and with the sell value obtain the (average) benefit of this sell
                 if ( len(fifo) == 0 ):
                     # if there hasn't been buys previous to a sell, the sell value is directly computed
                     accumulator = Decimal('0')
