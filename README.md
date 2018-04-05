@@ -69,7 +69,13 @@ Modify these script's variable values as convenient:
     changes_in_type_of_calculation = deque( [] )
 
     # decimal numbers precision:
-    DECIMAL_NUMBER_PRECISION = 6;
+    DECIMAL_NUMBER_PRECISION = 6; # 6 significant digits (both integer & decimal places, depending of number size...)
+
+    # regional comma separator:
+    # DECIMAL_POINT is substitued by PYTHON_DECIMAL_POINT, just in case a regional configuration
+    # be different from the standard decimal point '.'
+    DECIMAL_POINT = '.' # change this to your regional configuration
+    PYTHON_DECIMAL_POINT = '.'
 
     # column and value strings definitions:
     BEGINNING_OF_DATA = 2   # first row with data
@@ -83,6 +89,14 @@ Modify these script's variable values as convenient:
     PROFIT      = 'T'       # column of results
     PROFIT_DESC = 'U'       # here the ASSET id will be repeated
     ASSETS_VOL  = 'V'       # volume of assets of type ASSET after each buy/sell op
+    BUY_TO_FIAT = 'W'       # volume of fiat currency (or origin asset) invested in the buy(s) now sold
+    BUYS_TO_FIAT_VOLUME = 'A'   # volume of fiat currency (or origin asset) accumulated
+                                # in buys of assets sold again to fiat currency (or origin asset)
+                                # This column will be used in a row after the end of rows of data,
+                                # in which a resume of all origin/dest assets will presented.
+                                # If fiat currency (or origin asset) is the same in all cases,
+                                # the rows can be added in a global result, but this is not done
+                                # as a preventive measure to avoid errors of origin fiat/asset judgements.
 
     # round to zero if this quantity of assets is left on some sell:
     # NOTE: do no set ROUND_IF_BELOW to values below (previously set) DECIMAL_NUMBER_PRECISION 

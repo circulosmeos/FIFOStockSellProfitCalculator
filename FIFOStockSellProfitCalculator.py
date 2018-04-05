@@ -3,7 +3,7 @@
 # buys and sells in rows. 
 # See FIFOStockSellProfitCalculator() comments for columns' values.
 #
-# by circulosmeos, 2017-04, 2017-11, 2017-12
+# by circulosmeos, 2017-04, 2017-11, 2017-12, 2018-04
 # https://circulosmeos.wordpress.com/2017/04/23/fifo-profits-stock-sell-calculation-with-libreoffice-calc
 # https://github.com/circulosmeos/FIFOStockSellProfitCalculator
 # licensed under GPLv3
@@ -42,12 +42,12 @@ def FIFOStockSellProfitCalculator(*args):
     changes_in_type_of_calculation = deque( [] )
 
     # decimal numbers precision:
-    DECIMAL_NUMBER_PRECISION = 6;
+    DECIMAL_NUMBER_PRECISION = 6; # 6 significant digits (both integer & decimal places, depending on number size...)
 
     # regional comma separator:
     # DECIMAL_POINT is substitued by PYTHON_DECIMAL_POINT, just in case a regional configuration
     # be different from the standard decimal point '.'
-    DECIMAL_POINT = ','
+    DECIMAL_POINT = '.' # change this to your regional configuration
     PYTHON_DECIMAL_POINT = '.'
 
     # column and value strings definitions:
@@ -62,6 +62,14 @@ def FIFOStockSellProfitCalculator(*args):
     PROFIT      = 'T'       # column of results
     PROFIT_DESC = 'U'       # here the ASSET id will be repeated
     ASSETS_VOL  = 'V'       # volume of assets of type ASSET after each buy/sell op
+    BUY_TO_FIAT = 'W'       # volume of fiat currency (or origin asset) invested in the buy(s) now sold
+    BUYS_TO_FIAT_VOLUME = 'A'   # volume of fiat currency (or origin asset) accumulated
+                                # in buys of assets sold again to fiat currency (or origin asset)
+                                # This column will be used in a row after the end of rows of data,
+                                # in which a resume of all origin/dest assets will presented.
+                                # If fiat currency (or origin asset) is the same in all cases,
+                                # the rows can be added in a global result, but this is not done
+                                # as a preventive measure to avoid errors of origin fiat/asset judgements.
 
     # round to zero if this quantity of assets is left on some sell:
     # NOTE: do no set ROUND_IF_BELOW to values below (previously set) DECIMAL_NUMBER_PRECISION
@@ -116,6 +124,9 @@ def FIFOStockSellProfitCalculator(*args):
     fifos = {}
     # accumulator for the FIFO cost of each sell
     accumulator = 0
+    # (for BUYS_TO_FIAT_VOLUME): dictionary for accumulate buys value
+    # converted again in sells, for every asset
+    buys_to_fiat_volume = {}
 
     # move along TYPE column
     # accumulating BUYs and decrementing them with SELLs using FIFO
@@ -210,6 +221,7 @@ def FIFOStockSellProfitCalculator(*args):
                 accumulator
                 )
             sheet.getCellRangeByName(PROFIT_DESC + str(i)).String = asset
+
             # also show the remaining assets' volume
             assets_remaining = Decimal('0')
             for buys in fifo:
@@ -217,6 +229,16 @@ def FIFOStockSellProfitCalculator(*args):
             sheet.getCellRangeByName(ASSETS_VOL + str(i)).Value = float(assets_remaining)
             if LOG==1: print(fifo)
             if LOG==1: print(PROFIT + str(i) + "=\t" + sheet.getCellRangeByName(PROFIT + str(i)).String)
+
+            # show the volume of fiat currency (or origin asset) invested in the buy(s) now sold
+            sheet.getCellRangeByName(BUY_TO_FIAT + str(i)).Value = float(accumulator)
+            if LOG==1: print(BUY_TO_FIAT + str(i) + "=\t" + sheet.getCellRangeByName(BUY_TO_FIAT + str(i)).String)
+
+            # (for BUYS_TO_FIAT_VOLUME): Accumulate buy(s) value spent in this asset sell
+            if ( buys_to_fiat_volume.get(asset) == None ):
+                buys_to_fiat_volume[asset] = accumulator
+            else:
+                buys_to_fiat_volume[asset] += accumulator
 
         # next row
         i+=1
@@ -242,6 +264,16 @@ def FIFOStockSellProfitCalculator(*args):
     sheet.getCellRangeByName(PROFIT + str(END_OF_DATA+1)).Formula = \
         '=' + str(PROFIT) + str(END_OF_DATA) + '-' + str(FEE) + str(END_OF_DATA)
     sheet.getCellByPosition(ord(PROFIT)-ord('A')+1, END_OF_DATA-1+1).String = 'Net profit'
+
+    # (for BUYS_TO_FIAT_VOLUME):
+    # write resume of the volume of fiat currency (or origin asset) accumulated
+    # in buys of assets sold again to fiat currency (or origin asset)
+    i+=4 # row with this results after every row with data
+    sheet.getCellRangeByName(BUYS_TO_FIAT_VOLUME + str(i)).String = 'Accumulated value of buys converted to sells'
+    for asset, accumulator in sorted( buys_to_fiat_volume.items() ):
+        i+=1
+        sheet.getCellByPosition(ord(BUYS_TO_FIAT_VOLUME)-ord('A'), i-1).String = asset
+        sheet.getCellByPosition(ord(BUYS_TO_FIAT_VOLUME)-ord('A')+1, i-1).Value = float(accumulator)
 
     return None
 
