@@ -1,6 +1,8 @@
 **FIFOStockSellProfitCalculator.py** calculates FIFO profits on a LibreOffice calc document with buys and sells in rows.    
     
 Calculate in PROFIT column the "FIFO (First In First Out) profit" after a sell.   
+Also the mean profit (see *TYPE_OF_CALCULATION*), or even FIFO and mean row blocks one after another can be calculated (see *changes_in_type_of_calculation* array).   
+   
 Each Row represent a single stock operation.   
 The sell is identified by SELL string on TYPE column, using buys (BUY string on TYPE column) to acumulate previous buys.   
 ASSET column contains the identification of the type of the asset: each different asset is treated apart.   
@@ -14,6 +16,8 @@ See [this page for a step by step guide](https://circulosmeos.wordpress.com/2017
 Columns T, U and V and the three accumulated values have been written by the script on the sample file *sample.csv* (C1:J21):
 
 ![](https://circulosmeos.files.wordpress.com/2017/04/calc-stock-ops-example-after-script-exec.png?w=680)
+
+Tested at least under LibreOffice versions 5 and 6.
 
 Installation
 ============
